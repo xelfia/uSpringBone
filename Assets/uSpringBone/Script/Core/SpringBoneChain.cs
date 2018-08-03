@@ -30,6 +30,20 @@ namespace Es.uSpringBone
             public quaternion grobalRotation;
         }
 
+        public struct Group
+        {
+            public ComponentDataArray<BoneData> boneData;
+            [ReadOnly]
+            public SharedComponentDataArray<BoneRootParentData> parentData;
+            [ReadOnly]
+            public SharedComponentDataArray<ColliderData> colliderData;
+            [NativeDisableUnsafePtrRestriction]
+            public unsafe BoneData * boneDataHeadPtr;
+            [NativeDisableUnsafePtrRestriction]
+            public unsafe ColliderData * colliderDataHeadPtr;
+            public float dt;
+        }
+
         /// <summary>
         /// The main logic of SpringBone.
         /// Calculate the position of the child in the next frame and get rotation in that direction.
@@ -37,11 +51,11 @@ namespace Es.uSpringBone
         [BurstCompile]
         public struct SpringBoneJob : IJob
         {
-            public NativeArray<BoneData> boneData;
+            public ComponentDataArray<BoneData> boneData;
             [ReadOnly]
-            public NativeArray<BoneRootParentData> parentData;
+            public SharedComponentDataArray<BoneRootParentData> parentData;
             [ReadOnly]
-            public NativeArray<ColliderData> colliderData;
+            public SharedComponentDataArray<ColliderData> colliderData;
             [NativeDisableUnsafePtrRestriction]
             public unsafe BoneData * boneDataHeadPtr;
             [NativeDisableUnsafePtrRestriction]
@@ -50,8 +64,8 @@ namespace Es.uSpringBone
 
             public unsafe void Execute()
             {
-                boneDataHeadPtr = (BoneData * ) boneData.GetUnsafePtr();
-                colliderDataHeadPtr = (ColliderData * ) colliderData.GetUnsafeReadOnlyPtr();
+                boneDataHeadPtr = (BoneData * ) UnsafeUtility.AddressOf(ref boneData);
+                colliderDataHeadPtr = (ColliderData * ) UnsafeUtility.AddressOf(ref colliderData);
 
                 float3 parentPosition = Vector3.zero;
                 quaternion parentRotation = quaternion.identity;
@@ -127,6 +141,26 @@ namespace Es.uSpringBone
             }
         }
 
+        public class SpringBoneSystem : JobComponentSystem
+        {
+            [Inject]
+            private Group group;
+
+            protected unsafe override JobHandle OnUpdate(JobHandle inputDeps)
+            {
+                var job = new SpringBoneJob()
+                {
+                    boneData = group.boneData,
+                    parentData = group.parentData,
+                    colliderData = group.colliderData,
+                    boneDataHeadPtr = group.boneDataHeadPtr,
+                    colliderDataHeadPtr = group.colliderDataHeadPtr,
+                    dt = group.dt
+                };
+                return job.Schedule();
+            }
+        }
+
         [SerializeField]
         private SpringBoneCollider[] colliders;
 
@@ -144,6 +178,8 @@ namespace Es.uSpringBone
 
         public SpringBone[] Bones { get { return bones; } }
         public NativeArray<BoneData> BoneData { get { return boneData; } }
+
+        private EntityManager entityManager;
 
         void Start()
         {
@@ -182,13 +218,21 @@ namespace Es.uSpringBone
             // Register this component.
             SpringBoneJobScheduler.Instance.Register(this);
 
-            // Create a job.
-            calculateJob = new SpringBoneJob()
+
+            entityManager = World.Active.GetOrCreateManager<EntityManager>();
+            var archetype = entityManager.CreateArchetype(
+                typeof(BoneData),
+                typeof(BoneRootParentData),
+                typeof(ColliderData)
+            );
+
+            var entity = entityManager.CreateEntity(archetype);
+            for(int i = 0; i < bones.Length; ++i)
             {
-                boneData = boneData,
-                parentData = parentData,
-                colliderData = colliderData
-            };
+                //TODO:entity作成と登録
+                entityManager.SetComponentData(entity, )
+
+            }
         }
 
         void OnDestroy()
