@@ -13,9 +13,6 @@ using Unity.Jobs;
 using Unity.Burst;
 using Unity.Collections.LowLevel.Unsafe;
 
-using BoneData = Es.uSpringBone.SpringBone.Data;
-using ColliderData = Es.uSpringBone.SpringBoneCollider.Data;
-
 namespace Es.uSpringBone
 {
     /// <summary>
@@ -27,7 +24,7 @@ namespace Es.uSpringBone
         /// <summary>
         /// Information on the parent of RootBone.
         /// </summary>
-        public struct ParentData
+        public struct BoneRootParentData : ISharedComponentData
         {
             public float3 grobalPosition;
             public quaternion grobalRotation;
@@ -42,7 +39,7 @@ namespace Es.uSpringBone
         {
             public NativeArray<BoneData> boneData;
             [ReadOnly]
-            public NativeArray<ParentData> parentData;
+            public NativeArray<BoneRootParentData> parentData;
             [ReadOnly]
             public NativeArray<ColliderData> colliderData;
             [NativeDisableUnsafePtrRestriction]
@@ -137,10 +134,10 @@ namespace Es.uSpringBone
         private Transform[] rootBoneParents;
         private Transform cachedTransform;
         private NativeArray<BoneData> boneData;
-        private NativeArray<ParentData> parentData;
+        private NativeArray<BoneRootParentData> parentData;
         private NativeArray<ColliderData> colliderData;
         private BoneData[] boneDataTemp;
-        private ParentData[] parentDataTemp;
+        private BoneRootParentData[] parentDataTemp;
         private ColliderData[] colliderDataTemp;
         private SpringBoneJob calculateJob;
         private JobHandle calculateJobHandle;
@@ -171,10 +168,10 @@ namespace Es.uSpringBone
 
             // Memory allocation.
             boneDataTemp = new BoneData[bones.Length];
-            parentDataTemp = new ParentData[rootBoneParents.Length];
+            parentDataTemp = new BoneRootParentData[rootBoneParents.Length];
             colliderDataTemp = new ColliderData[colliders.Length];
             boneData = new NativeArray<BoneData>(bones.Length, Allocator.Persistent);
-            parentData = new NativeArray<ParentData>(rootBoneParents.Length, Allocator.Persistent);
+            parentData = new NativeArray<BoneRootParentData>(rootBoneParents.Length, Allocator.Persistent);
             colliderData = new NativeArray<ColliderData>(colliders.Length, Allocator.Persistent);
 
             // Set data.

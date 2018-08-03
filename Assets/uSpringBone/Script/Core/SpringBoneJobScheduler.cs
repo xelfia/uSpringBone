@@ -14,8 +14,6 @@ using Unity.Transforms;
 using Unity;
 using Unity.Collections.LowLevel.Unsafe;
 
-using BoneData = Es.uSpringBone.SpringBone.Data;
-
 namespace Es.uSpringBone
 {
     /// <summary>

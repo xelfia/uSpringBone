@@ -2,39 +2,40 @@
 using System.Collections.Generic;
 using UnityEngine;
 using Unity.Mathematics;
+using Unity.Entities;
 
 namespace Es.uSpringBone
 {
     /// <summary>
+    /// Collision data.
+    /// </summary>
+    public struct ColliderData : ISharedComponentData
+    {
+        public float radius;
+        public float3 grobalPosition;
+
+        public ColliderData(float radius, Vector3 grobalPosition)
+        {
+            this.radius = radius;
+            this.grobalPosition = grobalPosition;
+        }
+    }
+
+    /// <summary>
     /// Collision determination component.
     /// </summary>
     [ScriptExecutionOrder(-30000)]
-    public class SpringBoneCollider : MonoBehaviour
+    public class SpringBoneCollider : SharedComponentDataWrapper<ColliderData>
     {
         public float radius;
-        public Data data;
+        public ColliderData data;
 
         Transform cachedTransform;
-
-        /// <summary>
-        /// Collision data.
-        /// </summary>
-        public struct Data
-        {
-            public float radius;
-            public float3 grobalPosition;
-
-            public Data(float radius, Vector3 grobalPosition)
-            {
-                this.radius = radius;
-                this.grobalPosition = grobalPosition;
-            }
-        }
 
         void Start()
         {
             cachedTransform = transform;
-            data = new Data(radius, transform.position);
+            data = new ColliderData(radius, transform.position);
         }
 
         void Update()
